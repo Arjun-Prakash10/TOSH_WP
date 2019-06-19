@@ -42,32 +42,73 @@ router.get('/listmachines', (req,res)=>{                    //To list all machin
             });
         });
         machinespromise.then((machines)=>{
+            var DETAILPROMISES = new Promise((RESOLVES,REJECTS)=>{
+                var j = 0;
+                for(i=0;i<machines.length;i++){
+                    var detailspromise1 = new Promise((resolve1,reject1)=>{ 
+                        connection.query('SELECT PartNo, GoodPart, GoodPartSet FROM mac_para WHERE IPAddress=? ORDER BY mpid DESC',machines[i]["macid"] ,(err1,res1)=>{ //Fetch details
+                            if (err1){ 
+                                console.log(err1); 
+                                reject1(err1); 
+                            }
+                            else{ // console.log(res); 
+                                resolve1(res1);
+                            } 
+                            }); 
+                            });
+                    detailspromise1.then((params)=>{
+                        
+                        const part = JSON.stringify(params[0]["PartNo"])
+                        const gpa = JSON.stringify(params[0]["GoodPart"])
+                        const gps = JSON.stringify(params[0]["GoodPartSet"])
+                        console.log(part)
+                        machines[0].PartNo = part
+                        machines[0].GPA = gpa
+                        machines[0].GPS = gps
 
-            for(i=0;i<machines.length;i++){           // Used to add property to each mschine in the list of machines
-                var detailspromise = new Promise((resolve,reject)=>{ 
-                    connection.query('SELECT PartNo, IPAddress FROM mac_para WHERE IPAddress=? ORDER BY mpid DESC',machines[i]["macid"] ,(err,res)=>{ //Fetch details from mac_para table
-                        if (err){ 
-                            console.log(err); 
-                            reject(err); 
-                        }
-                        else{ // console.log(res); 
-                            resolve(res);
-                        } 
+                        console.log(JSON.stringify(machines)+"HEY")
+                        }, (err)=>{ 
+                            res.send('err'); 
+                            console.log(err); //if err send err });
+                        })
+                        j++
+                }
+
+                for(i=0;i<machines.length;i++){
+                    var detailspromise2 = new Promise((resolve2,reject2)=>{ 
+                        connection.query('SELECT pval_1 FROM pds_data WHERE IPAddress=? ORDER BY pdid DESC',machines[i]["macid"] ,(err2,res2)=>{ //Fetch details
+                            if (err2){ 
+                                console.log(err2); 
+                                reject2(err2); 
+                            }
+                            else{ // console.log(res); 
+                                resolve2(res2);
+                            } 
                         }); 
-                        });
-                detailspromise.then((params)=>{
-                    machines[0].PartNo=JSON.stringify(params[0]["PartNo"])             //To fetch the part-value for the latest entry
-                                                                                        
-                    console.log(JSON.stringify(machines))                              //o/p recieved :[{"macid":"157_103_222_246","mid":33,"PartNo":"\"PART 2\""}]
+                    });
+                    detailspromise2.then((pdsdata)=>{
+                        const cycletime = JSON.stringify(pdsdata[0]["pval_1"])
+                        console.log(cycletime)
+                        machines[0].CycleTime = cycletime
+                        console.log(JSON.stringify(machines)+"HEY")
                     }, (err)=>{ 
-                        res.send('err'); 
-                        console.log(err); //if err send err });
-                    })
-               
-                const jsondata=JSON.stringify(machines)
-                console.log(jsondata)                       //o/p:[{"macid":"157_103_222_246","mid":33}](Changes are not reflected here)
+                            res.send('err'); 
+                            console.log(err); //if err send err });
+                        }
+                    )
+                    j++     
+                }
+                if (j){
+                    RESOLVES(machines)
+                }                
+            })
+            DETAILPROMISES.then((updatedmachine)=>{
+                console.log("A")
+                const jsondata=JSON.stringify(updatedmachine)
+                console.log(jsondata+"JSONDATA VARIABLE")
                 res.send(JSON.parse(jsondata));             //Sending corresponding machines in a shopfloor
-        }}, (err)=>{
+        
+    })}, (err)=>{
             res.send('err');
             console.log(err);                               //If err log err
         });
