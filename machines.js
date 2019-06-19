@@ -42,11 +42,10 @@ router.get('/listmachines', (req,res)=>{                    //To list all machin
             });
         });
         machinespromise.then((machines)=>{
-            console.log(machines.length)
 
-            for(i=0;i<machines.length;i++){
+            for(i=0;i<machines.length;i++){           // Used to add property to each mschine in the list of machines
                 var detailspromise = new Promise((resolve,reject)=>{ 
-                    connection.query('SELECT PartNo, IPAddress FROM mac_para WHERE IPAddress=? ORDER BY mpid DESC',machines[i]["macid"] ,(err,res)=>{ //Fetch details
+                    connection.query('SELECT PartNo, IPAddress FROM mac_para WHERE IPAddress=? ORDER BY mpid DESC',machines[i]["macid"] ,(err,res)=>{ //Fetch details from mac_para table
                         if (err){ 
                             console.log(err); 
                             reject(err); 
@@ -57,39 +56,16 @@ router.get('/listmachines', (req,res)=>{                    //To list all machin
                         }); 
                         });
                 detailspromise.then((params)=>{
-                    machines[0].PartNo=JSON.stringify(params[0]["PartNo"])  
-
-                    console.log(JSON.stringify(machines))
+                    machines[0].PartNo=JSON.stringify(params[0]["PartNo"])             //To fetch the part-value for the latest entry
+                                                                                        
+                    console.log(JSON.stringify(machines))                              //o/p recieved :[{"macid":"157_103_222_246","mid":33,"PartNo":"\"PART 2\""}]
                     }, (err)=>{ 
                         res.send('err'); 
                         console.log(err); //if err send err });
                     })
-
-                    // Object.keys(machines).forEach((key)=>{
-                //     var detailspromise = new Promise((resolve,reject)=>{ 
-                //         connection.query('SELECT pval_1 FROM pds_data WHERE IPAddress=? ORDER BY DESC FETCH FIRST ROW ONLY',[key.macid] ,(err,res)=>{ //Fetch details
-                //             if (err){ 
-                //                 console.log(err); 
-                //                 reject(err); 
-                //             }
-                //             else{ // console.log(res); 
-                //                     resolve(res);
-                //             } 
-                //             }); 
-                //         });
-                //         detailspromise.then((pdsdata)=>{ 
-                //             key["CycleTime"]=pdsdata // console.log(JSON.parse(jsondata));                              
-                //         }, (err)=>{ 
-                //             res.send('err'); 
-                //             console.log(err); //if err send err });
-                //         }
-                //         )
-                //})
-                // console.log(JSON.parse(jsondata));
-        
-                
+               
                 const jsondata=JSON.stringify(machines)
-                console.log(JSON.stringify(jsondata))
+                console.log(jsondata)                       //o/p:[{"macid":"157_103_222_246","mid":33}](Changes are not reflected here)
                 res.send(JSON.parse(jsondata));             //Sending corresponding machines in a shopfloor
         }}, (err)=>{
             res.send('err');
